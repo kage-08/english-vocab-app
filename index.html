@@ -1,153 +1,165 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>英単語アプリ</title>
-</head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>単語帳アプリ</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin:0;
+    padding:10px;
+    background:#f5f5f5;
+  }
 
+  h1{
+    text-align:center;
+  }
+
+  input, select, textarea, button{
+    margin:5px 0;
+    padding:8px;
+    font-size:16px;
+    box-sizing:border-box;
+  }
+
+  button{
+    cursor:pointer;
+  }
+
+  #word-list{
+    margin-top:20px;
+  }
+
+  .word-item{
+    padding:10px;
+    background:#fff;
+    margin-bottom:8px;
+    border-radius:8px;
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+    flex-wrap:wrap;
+  }
+
+  .word-info{
+    flex:1;
+  }
+
+  @media(max-width:600px){
+    button{
+      width:100%;
+      font-size:18px;
+    }
+    input, select, textarea{
+      width:100%;
+    }
+  }
+</style>
+</head>
 <body>
 
-<h2>英単語テスト</h2>
+<h1>単語帳アプリ</h1>
 
-<button onclick="showWord()">出題</button>
-<button onclick="showAnswer()">答え</button>
-
-<p id="word" style="font-size:24px"></p>
-<p id="answer"></p>
-<p id="type"></p>
-<p id="note"></p>
-
-<hr>
-
-<h2>単語追加</h2>
-
-<input id="en" placeholder="English">
-<input id="jp" placeholder="日本語">
-
-<select id="typeInput">
-<option value="名詞">名詞</option>
-<option value="動詞">動詞</option>
-<option value="形容詞">形容詞</option>
-<option value="副詞">副詞</option>
-<option value="その他">その他</option>
-</select>
-
-<br><br>
-
-<textarea id="noteInput" placeholder="メモ（活用・類義語など）" rows="3" cols="40"></textarea>
-
-<br><br>
-
-<button onclick="addWord()">追加</button>
+<div>
+  <input type="text" id="word-input" placeholder="英単語">
+  <select id="pos-input">
+    <option value="動詞">動詞</option>
+    <option value="名詞">名詞</option>
+    <option value="形容詞">形容詞</option>
+    <option value="副詞">副詞</option>
+  </select>
+  <textarea id="note-input" placeholder="補足（活用・類義語など）"></textarea>
+  <button onclick="addWord()">単語追加</button>
+</div>
 
 <hr>
 
-<h2>単語一覧</h2>
+<div>
+  <select id="filter-pos">
+    <option value="">全て</option>
+    <option value="動詞">動詞</option>
+    <option value="名詞">名詞</option>
+    <option value="形容詞">形容詞</option>
+    <option value="副詞">副詞</option>
+  </select>
+  <button onclick="showWords()">フィルター適用</button>
+  <button onclick="startQuiz()">出題モード</button>
+</div>
 
-<ul id="wordList"></ul>
+<div id="word-list"></div>
 
 <script>
+let words = [];
 
-let words = JSON.parse(localStorage.getItem("words")) || [];
-
-let current = null;
-
-function save(){
- localStorage.setItem("words", JSON.stringify(words));
+// LocalStorage から読み込み
+if(localStorage.getItem('words')){
+  words = JSON.parse(localStorage.getItem('words'));
+  showWords();
 }
 
-function showWord(){
-
- if(words.length == 0){
-  alert("単語がありません");
-  return;
- }
-
- current = words[Math.floor(Math.random()*words.length)];
-
- document.getElementById("word").innerText = current.en;
- document.getElementById("answer").innerText = "";
- document.getElementById("type").innerText = "";
- document.getElementById("note").innerText = "";
-
-}
-
-function showAnswer(){
-
- if(current){
-
-  document.getElementById("answer").innerText =
-   "意味 : " + current.jp;
-
-  document.getElementById("type").innerText =
-   "品詞 : " + current.type;
-
-  document.getElementById("note").innerText =
-   "メモ : " + current.note;
-
- }
-
+function saveWords(){
+  localStorage.setItem('words', JSON.stringify(words));
 }
 
 function addWord(){
-
- let en = document.getElementById("en").value;
- let jp = document.getElementById("jp").value;
- let type = document.getElementById("typeInput").value;
- let note = document.getElementById("noteInput").value;
-
- if(en=="" || jp=="") return;
-
- words.push({
-  en:en,
-  jp:jp,
-  type:type,
-  note:note
- });
-
- save();
- render();
-
- document.getElementById("en").value="";
- document.getElementById("jp").value="";
- document.getElementById("noteInput").value="";
+  const word = document.getElementById('word-input').value.trim();
+  const pos = document.getElementById('pos-input').value;
+  const note = document.getElementById('note-input').value.trim();
+  if(word === '') return alert('単語を入力してください');
+  words.push({word,pos,note});
+  saveWords();
+  document.getElementById('word-input').value='';
+  document.getElementById('note-input').value='';
+  showWords();
 }
 
-function deleteWord(i){
-
- words.splice(i,1);
-
- save();
- render();
-
+function deleteWord(index){
+  if(confirm('削除しますか？')){
+    words.splice(index,1);
+    saveWords();
+    showWords();
+  }
 }
 
-function render(){
-
- let list = document.getElementById("wordList");
-
- list.innerHTML="";
-
- words.forEach((w,i)=>{
-
-  let li = document.createElement("li");
-
-  li.innerHTML =
-  w.en + " : " + w.jp +
-  " (" + w.type + ")" +
-  "<br>メモ: " + w.note +
-  " <button onclick='deleteWord("+i+")'>削除</button>";
-
-  list.appendChild(li);
-
- });
-
+function showWords(){
+  const filter = document.getElementById('filter-pos').value;
+  const listDiv = document.getElementById('word-list');
+  listDiv.innerHTML='';
+  words.forEach((w,i)=>{
+    if(filter && w.pos !== filter) return;
+    const div = document.createElement('div');
+    div.className='word-item';
+    div.innerHTML = `<div class="word-info">
+                      <strong>${w.word}</strong> (${w.pos})<br>
+                      <em>${w.note}</em>
+                     </div>
+                     <button onclick="deleteWord(${i})">削除</button>`;
+    listDiv.appendChild(div);
+  });
 }
 
-render();
+// 出題モード
+function startQuiz(){
+  if(words.length===0) return alert('単語がありません');
+  let quizWords = [...words];
+  quizWords = quizWords.sort(()=>Math.random()-0.5);
+  let idx = 0;
 
+  function next(){
+    if(idx >= quizWords.length){
+      alert('出題終了！');
+      showWords();
+      return;
+    }
+    const answer = prompt(`単語: ${quizWords[idx].word}\n意味・補足を入力してみて`);
+    alert(`答え: ${quizWords[idx].note || '（補足なし）'}`);
+    idx++;
+    next();
+  }
+  next();
+}
 </script>
 
 </body>
-
 </html>
