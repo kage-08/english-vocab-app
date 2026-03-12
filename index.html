@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>英単語アプリ</title>
+</head>
+
+<body>
+
+<h2>英単語テスト</h2>
+
+<button onclick="showWord()">出題</button>
+<button onclick="showAnswer()">答え</button>
+
+<p id="word" style="font-size:24px"></p>
+<p id="answer"></p>
+<p id="type"></p>
+<p id="note"></p>
+
+<hr>
+
+<h2>単語追加</h2>
+
+<input id="en" placeholder="English">
+<input id="jp" placeholder="日本語">
+
+<select id="typeInput">
+<option value="名詞">名詞</option>
+<option value="動詞">動詞</option>
+<option value="形容詞">形容詞</option>
+<option value="副詞">副詞</option>
+<option value="その他">その他</option>
+</select>
+
+<br><br>
+
+<textarea id="noteInput" placeholder="メモ（活用・類義語など）" rows="3" cols="40"></textarea>
+
+<br><br>
+
+<button onclick="addWord()">追加</button>
+
+<hr>
+
+<h2>単語一覧</h2>
+
+<ul id="wordList"></ul>
+
+<script>
+
+let words = JSON.parse(localStorage.getItem("words")) || [];
+
+let current = null;
+
+function save(){
+ localStorage.setItem("words", JSON.stringify(words));
+}
+
+function showWord(){
+
+ if(words.length == 0){
+  alert("単語がありません");
+  return;
+ }
+
+ current = words[Math.floor(Math.random()*words.length)];
+
+ document.getElementById("word").innerText = current.en;
+ document.getElementById("answer").innerText = "";
+ document.getElementById("type").innerText = "";
+ document.getElementById("note").innerText = "";
+
+}
+
+function showAnswer(){
+
+ if(current){
+
+  document.getElementById("answer").innerText =
+   "意味 : " + current.jp;
+
+  document.getElementById("type").innerText =
+   "品詞 : " + current.type;
+
+  document.getElementById("note").innerText =
+   "メモ : " + current.note;
+
+ }
+
+}
+
+function addWord(){
+
+ let en = document.getElementById("en").value;
+ let jp = document.getElementById("jp").value;
+ let type = document.getElementById("typeInput").value;
+ let note = document.getElementById("noteInput").value;
+
+ if(en=="" || jp=="") return;
+
+ words.push({
+  en:en,
+  jp:jp,
+  type:type,
+  note:note
+ });
+
+ save();
+ render();
+
+ document.getElementById("en").value="";
+ document.getElementById("jp").value="";
+ document.getElementById("noteInput").value="";
+}
+
+function deleteWord(i){
+
+ words.splice(i,1);
+
+ save();
+ render();
+
+}
+
+function render(){
+
+ let list = document.getElementById("wordList");
+
+ list.innerHTML="";
+
+ words.forEach((w,i)=>{
+
+  let li = document.createElement("li");
+
+  li.innerHTML =
+  w.en + " : " + w.jp +
+  " (" + w.type + ")" +
+  "<br>メモ: " + w.note +
+  " <button onclick='deleteWord("+i+")'>削除</button>";
+
+  list.appendChild(li);
+
+ });
+
+}
+
+render();
+
+</script>
+
+</body>
+
+</html>
